@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    
-<title>Jumping Options</title>
+<title>Jumping Options with Counters</title>
 <style>
     body{font-family:Arial;padding:30px;}
-
     .container{
         width:600px;height:350px;position:relative;
         border:1px dashed #888;padding:30px;
@@ -23,34 +21,11 @@
         display:none;
         max-width:300px;
     }
-
-#confirmBtn{
-    font-size: 26px;
-    padding: 18px 40px;
-    background:#4CAF50;
-    color:white;
-    border:none;
-    border-radius:12px;
-    cursor:pointer;
-    margin-top:20px;
-    display:block;
-    animation:pulse 1.4s infinite;
-    transition: transform .2s;
-}
-
-@keyframes pulse{
-    0%{ transform:scale(1); }
-    50%{ transform:scale(1.08); }
-    100%{ transform:scale(1); }
-}
-
-#confirmBtn:hover{
-    transform:scale(1.15);
-    opacity:0.9;
-}
-
-
-    
+    #chartContainer{
+        margin-top:50px;
+        width:600px;
+        height:400px;
+    }
 </style>
 </head>
 <body>
@@ -71,9 +46,26 @@
 <!-- poza care se afișează -->
 <img id="resultImg" src="https://scontent.fotp8-1.fna.fbcdn.net/v/t39.30808-6/559985363_1341596227339458_8769479332339513813_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=833d8c&_nc_ohc=PfXM_K7CQWIQ7kNvwGwFlfH&_nc_oc=AdkNYrJYUFsGp5S80sGD8MrXegW4o9ElGQ-x6AAu0s54K_uSSIihnjng94MYoS3AXo0&_nc_zt=23&_nc_ht=scontent.fotp8-1.fna&_nc_gid=bIqcFviYwf7xq9JJxghYOw&oh=00_Afn90LcMPs-p8OqVUSvYYxIYt5Vv1DdnxckLdS7isXw_QA&oe=6939BA49" alt="rezultat">
 
+<!-- Chart container -->
+<div id="chartContainer">
+    <canvas id="clickChart"></canvas>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-const container=document.querySelector(".container");
+const container = document.querySelector(".container");
 const fake = document.querySelectorAll(".fake");
+const real = document.getElementById("real");
+
+// Counters for clicks
+const clickCounts = {
+    "Opțiune reală": 0,
+    "Falsă 1": 0,
+    "Falsă 2": 0,
+    "Falsă 3": 0
+};
 
 function move(el){
     const maxX = container.clientWidth - 120;
@@ -82,28 +74,61 @@ function move(el){
     el.style.top = Math.random()*maxY + "px";
 }
 
-// place everything
+// Initial placement
 document.querySelectorAll("label").forEach(move);
 
-// running away ALWAYS
-fake.forEach(f=>{
-    f.addEventListener("mouseenter",()=>move(f));
-    f.addEventListener("mousemove",()=>move(f));
-    f.addEventListener("mousedown",()=>move(f));
-    f.addEventListener("click",e=>{
+// Make fake options jump
+fake.forEach((f, i) => {
+    const fakeName = `Falsă ${i+1}`;
+    f.addEventListener("mouseenter", () => move(f));
+    f.addEventListener("mousemove", () => move(f));
+    f.addEventListener("mousedown", () => move(f));
+    f.addEventListener("click", e => {
         e.preventDefault();
         move(f);
+        clickCounts[fakeName]++;
+        updateChart();
     });
 });
 
-// show image when real option is selected
+// Real option click counter
+real.addEventListener("click", () => {
+    clickCounts["Opțiune reală"]++;
+    updateChart();
+});
+
+// Show image if real option is selected
 function showPicture(){
-    const real=document.getElementById("real");
     if(real.checked){
         document.getElementById("resultImg").style.display="block";
-    }else{
+    } else {
         alert("Trebuie să alegi opțiunea reală 😄");
     }
+}
+
+// Initialize Chart.js
+const ctx = document.getElementById('clickChart').getContext('2d');
+const chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: Object.keys(clickCounts),
+        datasets: [{
+            label: 'Număr de click-uri',
+            data: Object.values(clickCounts),
+            backgroundColor: ['#4CAF50','#FF5733','#33B5FF','#FFC300']
+        }]
+    },
+    options: {
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+
+// Update chart when clicks change
+function updateChart(){
+    chart.data.datasets[0].data = Object.values(clickCounts);
+    chart.update();
 }
 </script>
 
